@@ -1,7 +1,10 @@
 /**
  * Copyright (c) 2015, Yaacov Zamir <kobi.zamir@gmail.com>
- * Copyright (c) 2017, Andrew Voznytsa <andrew.voznytsa@gmail.com>, FC_WRITE_REGISTER and FC_WRITE_MULTIPLE_COILS support
- * Copyright (c) 2019, Soroush Falahati <soroush@falahai.net>, total communication rewrite, setUnitAddress(), FC_READ_EXCEPTION_STATUS support, general refactoring
+ * Copyright (c) 2017, Andrew Voznytsa <andrew.voznytsa@gmail.com>,
+ *   FC_WRITE_REGISTER and FC_WRITE_MULTIPLE_COILS support
+ * Copyright (c) 2019, Soroush Falahati <soroush@falahai.net>,
+ *   total communication rewrite, setUnitAddress(),
+ *   FC_READ_EXCEPTION_STATUS support, general refactoring
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -40,7 +43,9 @@
 #define MODBUS_FULL_SILENCE_MULTIPLIER 7
 
 #define readUInt16(arr, index) word(arr[index], arr[index + 1])
-#define readCRC(arr, length) word(arr[(length - MODBUS_CRC_LENGTH) + 1], arr[length - MODBUS_CRC_LENGTH])
+#define readCRC(arr, length) word( \
+  arr[(length - MODBUS_CRC_LENGTH) + 1], \
+  arr[length - MODBUS_CRC_LENGTH])
 
 /**
  * ---------------------------------------------------
@@ -68,7 +73,10 @@ Modbus::Modbus(uint8_t unitAddress, int transmissionControlPin)
  * @param transmissionControlPin the digital out pin to be used for RS485
  * transmission control.
  */
-Modbus::Modbus(Stream &serialStream, uint8_t unitAddress, int transmissionControlPin)
+Modbus::Modbus(
+  Stream &serialStream,
+  uint8_t unitAddress,
+  int transmissionControlPin)
     : _serialStream(serialStream)
 {
     // set modbus slave unit id
@@ -111,7 +119,7 @@ uint64_t Modbus::getTotalBytesReceived() {
 }
 
 /**
- * Begins initializing the serial stream and preparing to read request messages.
+ * Begins initializing the serial stream and preparing to read request messages
  *
  * @param boudrate the serial port boudrate.
  */
@@ -141,7 +149,8 @@ void Modbus::begin(uint64_t boudrate)
 
     // set the last received time to 3.5T on the future to ignore
     // request currently in the middle of transmission
-    _lastCommunicationTime = micros() + (_halfCharTimeInMicroSecond * MODBUS_FULL_SILENCE_MULTIPLIER);
+    _lastCommunicationTime = micros() +
+      (_halfCharTimeInMicroSecond * MODBUS_FULL_SILENCE_MULTIPLIER);
 
     // sets the request buffer length to zero
     _requestBufferLength = 0;
@@ -169,8 +178,10 @@ uint8_t Modbus::poll()
 
     // prepare output buffer
     memset(_responseBuffer, 0, MODBUS_MAX_BUFFER);
-    _responseBuffer[MODBUS_ADDRESS_INDEX] = _requestBuffer[MODBUS_ADDRESS_INDEX];
-    _responseBuffer[MODBUS_FUNCTION_CODE_INDEX] = _requestBuffer[MODBUS_FUNCTION_CODE_INDEX];
+    _responseBuffer[MODBUS_ADDRESS_INDEX] =
+      _requestBuffer[MODBUS_ADDRESS_INDEX];
+    _responseBuffer[MODBUS_FUNCTION_CODE_INDEX] =
+      _requestBuffer[MODBUS_FUNCTION_CODE_INDEX];
     _responseBufferLength = MODBUS_FRAME_SIZE;
 
     // validate request
@@ -213,7 +224,8 @@ uint8_t Modbus::readFunctionCode()
  */
 uint8_t Modbus::readUnitAddress()
 {
-    if ((_requestBufferLength >= MODBUS_FRAME_SIZE) && !_isRequestBufferReading)
+    if ((_requestBufferLength >= MODBUS_FRAME_SIZE) &&
+      !_isRequestBufferReading)
     {
         return _requestBuffer[MODBUS_ADDRESS_INDEX];
     }
@@ -224,8 +236,8 @@ uint8_t Modbus::readUnitAddress()
  * Returns a boolean value indicating if the request currently being processed 
  * is a broadcast message and therefore does not need a response.
  *
- * @return true if the current request message is a broadcase message; otherwise
- * false
+ * @return true if the current request message is a broadcase message;
+ * otherwise false
  */
 bool Modbus::isBroadcast()
 {
@@ -245,11 +257,14 @@ bool Modbus::readCoilFromBuffer(int offset)
         if (offset == 0)
         {
             // (2 x coilAddress, 1 x value)
-            return readUInt16(_requestBuffer, MODBUS_DATA_INDEX + 2) == COIL_ON;
+            return readUInt16(
+              _requestBuffer,
+              MODBUS_DATA_INDEX + 2) == COIL_ON;
         }
         return false;
     }
-    else if (_requestBuffer[MODBUS_FUNCTION_CODE_INDEX] == FC_WRITE_MULTIPLE_COILS)
+    else if (_requestBuffer[MODBUS_FUNCTION_CODE_INDEX] ==
+      FC_WRITE_MULTIPLE_COILS)
     {
         // (2 x firstCoilAddress, 2 x coilsCount, 1 x valueBytes, n x values)
         uint16_t index = MODBUS_DATA_INDEX + 5 + (offset / 8);
@@ -280,9 +295,11 @@ uint16_t Modbus::readRegisterFromBuffer(int offset)
             return readUInt16(_requestBuffer, MODBUS_DATA_INDEX + 2);
         }
     }
-    else if (_requestBuffer[MODBUS_FUNCTION_CODE_INDEX] == FC_WRITE_MULTIPLE_REGISTERS)
+    else if (_requestBuffer[MODBUS_FUNCTION_CODE_INDEX] ==
+      FC_WRITE_MULTIPLE_REGISTERS)
     {
-        // (2 x firstRegisterAddress, 2 x registersCount, 1 x valueBytes, n x values)
+        // (2 x firstRegisterAddress, 2 x registersCount, 1 x valueBytes,
+        //  n x values)
         uint16_t index = MODBUS_DATA_INDEX + 5 + (offset * 2);
 
         // check offset
@@ -303,7 +320,8 @@ uint16_t Modbus::readRegisterFromBuffer(int offset)
 uint8_t Modbus::writeExceptionStatusToBuffer(int offset, bool status)
 {
     // check function code
-    if (_requestBuffer[MODBUS_FUNCTION_CODE_INDEX] != FC_READ_EXCEPTION_STATUS) {
+    if (_requestBuffer[MODBUS_FUNCTION_CODE_INDEX] !=
+      FC_READ_EXCEPTION_STATUS) {
         return STATUS_ILLEGAL_DATA_ADDRESS;
     }
 
@@ -385,8 +403,10 @@ uint8_t Modbus::writeDiscreteInputToBuffer(int offset, bool state)
 uint8_t Modbus::writeRegisterToBuffer(int offset, uint16_t value)
 {
     // check function code
-    if (_requestBuffer[MODBUS_FUNCTION_CODE_INDEX] != FC_READ_HOLDING_REGISTERS && 
-        _requestBuffer[MODBUS_FUNCTION_CODE_INDEX] != FC_READ_INPUT_REGISTERS) {
+    if (_requestBuffer[MODBUS_FUNCTION_CODE_INDEX] !=
+      FC_READ_HOLDING_REGISTERS && 
+        _requestBuffer[MODBUS_FUNCTION_CODE_INDEX] !=
+      FC_READ_INPUT_REGISTERS) {
         return STATUS_ILLEGAL_DATA_ADDRESS;
     }
 
@@ -454,7 +474,8 @@ bool Modbus::readRequest()
         if (!_isRequestBufferReading)
         {
             // And it already took 1.5T from the last message
-            if ((micros() - _lastCommunicationTime) > (_halfCharTimeInMicroSecond * MODBUS_HALF_SILENCE_MULTIPLIER))
+            if ((micros() - _lastCommunicationTime) >
+              (_halfCharTimeInMicroSecond * MODBUS_HALF_SILENCE_MULTIPLIER))
             {
                 // start reading and clear buffer
                 _requestBufferLength = 0;
@@ -478,12 +499,17 @@ bool Modbus::readRequest()
 
             // add new bytes to buffer
             lenght = min(lenght, MODBUS_MAX_BUFFER - _requestBufferLength);
-            lenght = _serialStream.readBytes(_requestBuffer + _requestBufferLength, MODBUS_MAX_BUFFER - _requestBufferLength);
+            lenght = _serialStream.readBytes(
+              _requestBuffer + _requestBufferLength,
+              MODBUS_MAX_BUFFER - _requestBufferLength);
 
-            // if this is the first read, check the address to reject irrelevant requests
+            // if this is the first read,
+            // check the address to reject irrelevant requests
             if (_requestBufferLength == 0 &&
                 lenght > MODBUS_ADDRESS_INDEX &&
-                (_requestBuffer[MODBUS_ADDRESS_INDEX] != _unitAddress && _requestBuffer[MODBUS_ADDRESS_INDEX] != MODBUS_BROADCAST_ADDRESS))
+                (_requestBuffer[MODBUS_ADDRESS_INDEX] != _unitAddress &&
+                  _requestBuffer[MODBUS_ADDRESS_INDEX] !=
+                  MODBUS_BROADCAST_ADDRESS))
             {
                 // bad address, stop reading
                 _isRequestBufferReading = false;
@@ -502,8 +528,10 @@ bool Modbus::readRequest()
     }
     else
     {
-        // if we are in reading but no data is available for 1.5T; this request is completed
-        if (_isRequestBufferReading && ((micros() - _lastCommunicationTime) > (_halfCharTimeInMicroSecond * MODBUS_HALF_SILENCE_MULTIPLIER)))
+        // if we are in reading but no data is available for 1.5T;
+        // this request is completed
+        if (_isRequestBufferReading && ((micros() - _lastCommunicationTime) >
+          (_halfCharTimeInMicroSecond * MODBUS_HALF_SILENCE_MULTIPLIER)))
         {
             // allow for new requests to be processed
             _isRequestBufferReading = false;
@@ -515,7 +543,8 @@ bool Modbus::readRequest()
         }
     }
 
-    return !_isRequestBufferReading && (_requestBufferLength >= MODBUS_FRAME_SIZE);
+    return !_isRequestBufferReading &&
+      (_requestBufferLength >= MODBUS_FRAME_SIZE);
 }
 
 /**
@@ -583,7 +612,9 @@ bool Modbus::validateRequest()
 
     // check crc
     uint16_t crc = readCRC(_requestBuffer, _requestBufferLength);
-    if (Modbus::calculateCRC(_requestBuffer, _requestBufferLength - MODBUS_CRC_LENGTH) != crc)
+    if (Modbus::calculateCRC(
+      _requestBuffer,
+      _requestBufferLength - MODBUS_CRC_LENGTH) != crc)
     {
         // ignore
         return false;
@@ -623,14 +654,17 @@ uint8_t Modbus::createResponse()
         addressesLength = readUInt16(_requestBuffer, MODBUS_DATA_INDEX + 2);
 
         // calculate response data length and add to output buffer length
-        _responseBuffer[MODBUS_DATA_INDEX] = (addressesLength / 8) + (addressesLength % 8 != 0);
+        _responseBuffer[MODBUS_DATA_INDEX] =
+          (addressesLength / 8) + (addressesLength % 8 != 0);
         _responseBufferLength += 1 + _responseBuffer[MODBUS_DATA_INDEX];
 
         // execute callback and return the status code
-        callbackIndex = _requestBuffer[MODBUS_FUNCTION_CODE_INDEX] == FC_READ_COILS ? CB_READ_COILS : CB_READ_DISCRETE_INPUTS;
-        return Modbus::executeCallback(callbackIndex, firstAddress, addressesLength);
-    case FC_READ_HOLDING_REGISTERS: // read holding registers (analog out state)
-    case FC_READ_INPUT_REGISTERS:   // read input registers (analog in)
+        callbackIndex = _requestBuffer[MODBUS_FUNCTION_CODE_INDEX] ==
+          FC_READ_COILS ? CB_READ_COILS : CB_READ_DISCRETE_INPUTS;
+        return Modbus::executeCallback(
+          callbackIndex, firstAddress, addressesLength);
+    case FC_READ_HOLDING_REGISTERS:// read holding registers (analog out state)
+    case FC_READ_INPUT_REGISTERS:  // read input registers (analog in)
         // read the starting address and the number of inputs
         firstAddress = readUInt16(_requestBuffer, MODBUS_DATA_INDEX);
         addressesLength = readUInt16(_requestBuffer, MODBUS_DATA_INDEX + 2);
@@ -640,8 +674,14 @@ uint8_t Modbus::createResponse()
         _responseBufferLength += 1 + _responseBuffer[MODBUS_DATA_INDEX];
 
         // execute callback and return the status code
-        callbackIndex = _requestBuffer[MODBUS_FUNCTION_CODE_INDEX] == FC_READ_HOLDING_REGISTERS ? CB_READ_HOLDING_REGISTERS : CB_READ_INPUT_REGISTERS;
-        return Modbus::executeCallback(callbackIndex, firstAddress, addressesLength);
+        callbackIndex = _requestBuffer[MODBUS_FUNCTION_CODE_INDEX] ==
+          FC_READ_HOLDING_REGISTERS ?
+          CB_READ_HOLDING_REGISTERS :
+          CB_READ_INPUT_REGISTERS;
+        return Modbus::executeCallback(
+          callbackIndex,
+          firstAddress,
+          addressesLength);
     case FC_WRITE_COIL: // write one coil (digital out)
         // read the address
         firstAddress = readUInt16(_requestBuffer, MODBUS_DATA_INDEX);
@@ -649,7 +689,10 @@ uint8_t Modbus::createResponse()
         // add response data length to output buffer length
         _responseBufferLength += 4;
         // copy parts of the request data that need to be in the response data
-        memcpy(_responseBuffer + MODBUS_DATA_INDEX, _requestBuffer + MODBUS_DATA_INDEX, _responseBufferLength - MODBUS_FRAME_SIZE);
+        memcpy(
+          _responseBuffer + MODBUS_DATA_INDEX,
+          _requestBuffer + MODBUS_DATA_INDEX,
+          _responseBufferLength - MODBUS_FRAME_SIZE);
 
         // execute callback and return the status code
         return Modbus::executeCallback(CB_WRITE_COILS, firstAddress, 1);
@@ -660,10 +703,16 @@ uint8_t Modbus::createResponse()
         // add response data length to output buffer length
         _responseBufferLength += 4;
         // copy parts of the request data that need to be in the response data
-        memcpy(_responseBuffer + MODBUS_DATA_INDEX, _requestBuffer + MODBUS_DATA_INDEX, _responseBufferLength - MODBUS_FRAME_SIZE);
+        memcpy(
+          _responseBuffer + MODBUS_DATA_INDEX,
+          _requestBuffer + MODBUS_DATA_INDEX,
+          _responseBufferLength - MODBUS_FRAME_SIZE);
 
         // execute callback and return the status code
-        return Modbus::executeCallback(CB_WRITE_HOLDING_REGISTERS, firstAddress, 1);
+        return Modbus::executeCallback(
+          CB_WRITE_HOLDING_REGISTERS,
+          firstAddress,
+          1);
     case FC_WRITE_MULTIPLE_COILS: // write coils (digital out)
         // read the starting address and the number of outputs
         firstAddress = readUInt16(_requestBuffer, MODBUS_DATA_INDEX);
@@ -672,10 +721,16 @@ uint8_t Modbus::createResponse()
         // add response data length to output buffer length
         _responseBufferLength += 4;
         // copy parts of the request data that need to be in the response data
-        memcpy(_responseBuffer + MODBUS_DATA_INDEX, _requestBuffer + MODBUS_DATA_INDEX, _responseBufferLength - MODBUS_FRAME_SIZE);
+        memcpy(
+          _responseBuffer + MODBUS_DATA_INDEX,
+          _requestBuffer + MODBUS_DATA_INDEX,
+          _responseBufferLength - MODBUS_FRAME_SIZE);
         
         // execute callback and return the status code
-        return Modbus::executeCallback(CB_WRITE_COILS, firstAddress, addressesLength);
+        return Modbus::executeCallback(
+          CB_WRITE_COILS,
+          firstAddress,
+          addressesLength);
     case FC_WRITE_MULTIPLE_REGISTERS: // write holding registers (analog out)
         // read the starting address and the number of outputs
         firstAddress = readUInt16(_requestBuffer, MODBUS_DATA_INDEX);
@@ -684,10 +739,16 @@ uint8_t Modbus::createResponse()
         // add response data length to output buffer length
         _responseBufferLength += 4;
         // copy parts of the request data that need to be in the response data
-        memcpy(_responseBuffer + MODBUS_DATA_INDEX, _requestBuffer + MODBUS_DATA_INDEX, _responseBufferLength - MODBUS_FRAME_SIZE);
+        memcpy(
+          _responseBuffer + MODBUS_DATA_INDEX,
+          _requestBuffer + MODBUS_DATA_INDEX,
+          _responseBufferLength - MODBUS_FRAME_SIZE);
 
         // execute callback and return the status code
-        return Modbus::executeCallback(CB_WRITE_HOLDING_REGISTERS, firstAddress, addressesLength);
+        return Modbus::executeCallback(
+          CB_WRITE_HOLDING_REGISTERS,
+          firstAddress,
+          addressesLength);
     default:
         return STATUS_ILLEGAL_FUNCTION;
     }
@@ -698,11 +759,15 @@ uint8_t Modbus::createResponse()
  *
  * @return the status code representing the success of this operation
  */
-uint8_t Modbus::executeCallback(uint8_t callbackIndex, uint16_t address, uint16_t length)
+uint8_t Modbus::executeCallback(
+  uint8_t callbackIndex,
+  uint16_t address,
+  uint16_t length)
 {
     if (cbVector[callbackIndex])
     {
-        return cbVector[callbackIndex](Modbus::readFunctionCode(), address, length);
+        return cbVector[callbackIndex](
+          Modbus::readFunctionCode(), address, length);
     }
     else
     {
@@ -722,13 +787,17 @@ uint16_t Modbus::writeResponse()
      */
 
     // check if there is a response and this is supposed to be the first write
-    if (_responseBufferWriteIndex == 0 && _responseBufferLength >= MODBUS_FRAME_SIZE) { 
+    if (
+      _responseBufferWriteIndex == 0 &&
+      _responseBufferLength >= MODBUS_FRAME_SIZE) { 
         // set status as writing
         _isResponseBufferWriting = true;
     } 
 
     // check if we are not in writing or the address is broadcast
-    if (!_isResponseBufferWriting || _responseBuffer[MODBUS_ADDRESS_INDEX] == MODBUS_BROADCAST_ADDRESS) { 
+    if (
+      !_isResponseBufferWriting ||
+      _responseBuffer[MODBUS_ADDRESS_INDEX] == MODBUS_BROADCAST_ADDRESS) { 
         // cleanup and ignore
         _isResponseBufferWriting = false;
         _responseBufferWriteIndex = 0;
@@ -743,16 +812,22 @@ uint16_t Modbus::writeResponse()
     // if this is supposed to be the first write
     if (_responseBufferWriteIndex == 0) {
         // if we still need to wait
-        if ((micros() - _lastCommunicationTime) <= (_halfCharTimeInMicroSecond * MODBUS_HALF_SILENCE_MULTIPLIER))
+        if (
+          (micros() - _lastCommunicationTime) <=
+          (_halfCharTimeInMicroSecond * MODBUS_HALF_SILENCE_MULTIPLIER))
         {
             // ignore
             return 0;
         }
 
         // calculate and fill crc
-        uint16_t crc = Modbus::calculateCRC(_responseBuffer, _responseBufferLength - MODBUS_CRC_LENGTH);
-        _responseBuffer[_responseBufferLength - MODBUS_CRC_LENGTH] = crc & 0xff;
-        _responseBuffer[(_responseBufferLength - MODBUS_CRC_LENGTH) + 1] = crc >> 8;
+        uint16_t crc = Modbus::calculateCRC(
+          _responseBuffer,
+          _responseBufferLength - MODBUS_CRC_LENGTH);
+        _responseBuffer[_responseBufferLength - MODBUS_CRC_LENGTH] =
+          crc & 0xff;
+        _responseBuffer[(_responseBufferLength - MODBUS_CRC_LENGTH) + 1] =
+          crc >> 8;
 
         // enter transmission mode
         if (_transmissionControlPin > MODBUS_CONTROL_PIN_NONE) {
@@ -781,7 +856,9 @@ uint16_t Modbus::writeResponse()
             _totalBytesSent += length;
         } 
         
-        if (_serialStream.availableForWrite() < _serialTransmissionBufferLength)
+        if (
+          _serialStream.availableForWrite() <
+          _serialTransmissionBufferLength)
         { 
             // still waiting for write to complete
             _lastCommunicationTime = micros();
@@ -805,7 +882,8 @@ uint16_t Modbus::writeResponse()
     }
 
     if (_responseBufferWriteIndex >= _responseBufferLength &&
-        (micros() - _lastCommunicationTime) > (_halfCharTimeInMicroSecond * MODBUS_HALF_SILENCE_MULTIPLIER)) {
+        (micros() - _lastCommunicationTime) >
+      (_halfCharTimeInMicroSecond * MODBUS_HALF_SILENCE_MULTIPLIER)) {
 
         // end transmission
         if (_transmissionControlPin > MODBUS_CONTROL_PIN_NONE) {

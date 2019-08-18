@@ -1,6 +1,7 @@
 /**
  * Copyright (c) 2015, Yaacov Zamir <kobi.zamir@gmail.com>
- * Copyright (c) 2017, Andrew Voznytsa <andrew.voznytsa@gmail.com>, FC_WRITE_REGISTER and FC_WRITE_MULTIPLE_COILS support
+ * Copyright (c) 2017, Andrew Voznytsa <andrew.voznytsa@gmail.com>,
+ *   FC_WRITE_REGISTER and FC_WRITE_MULTIPLE_COILS support
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -78,8 +79,13 @@ typedef uint8_t (*MobbusCallback)(uint8_t, uint16_t, uint16_t);
  */
 class Modbus {
 public:
-    Modbus(uint8_t unitAddress = MODBUS_DEFAULT_UNIT_ADDRESS, int transmissionControlPin = MODBUS_CONTROL_PIN_NONE);
-    Modbus(Stream &serialStream, uint8_t unitAddress = MODBUS_DEFAULT_UNIT_ADDRESS, int transmissionControlPin = MODBUS_CONTROL_PIN_NONE);
+    Modbus(
+      uint8_t unitAddress = MODBUS_DEFAULT_UNIT_ADDRESS,
+      int transmissionControlPin = MODBUS_CONTROL_PIN_NONE);
+    Modbus(
+      Stream &serialStream,
+      uint8_t unitAddress = MODBUS_DEFAULT_UNIT_ADDRESS,
+      int transmissionControlPin = MODBUS_CONTROL_PIN_NONE);
 
     void begin(uint64_t boudRate);
     void setUnitAddress(uint8_t unitAddress);
@@ -125,7 +131,10 @@ private:
     bool readRequest();
     bool validateRequest();
     uint8_t createResponse();
-    uint8_t executeCallback(uint8_t callbackIndex, uint16_t address, uint16_t length);
+    uint8_t executeCallback(
+      uint8_t callbackIndex,
+      uint16_t address,
+      uint16_t length);
     uint16_t writeResponse();
     uint16_t reportException(uint8_t exceptionCode);
     uint16_t calculateCRC(uint8_t *buffer, int length);
