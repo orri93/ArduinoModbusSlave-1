@@ -8,6 +8,8 @@ set(arduinomodbusslave_target libarduinomodbusslave)
 
 list(APPEND arduinomodbusslave_include
   "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  
+target_compile_definitions(${arduinomodbusslave_target} PUBLIC ARDUINO_ARCH_AVR)
 
 list(APPEND arduinomodbusslave_source 
   "${CMAKE_CURRENT_SOURCE_DIR}/src/ModbusSlave.cpp")
