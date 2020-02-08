@@ -123,7 +123,7 @@ public:
     //     Modbus modbus(slaves, 1);
     //     slaves[0].cbVector[CB_WRITE_COILS] = writeDigitalOut;
     ModbusCallback* cbVector;
-private:
+protected:
     ModbusSlave* _slaves = new ModbusSlave();
     uint8_t _numberOfSlaves = 1;
 
