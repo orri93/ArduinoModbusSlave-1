@@ -9,14 +9,14 @@ set(arduinomodbusslave_target libarduinomodbusslave)
 list(APPEND arduinomodbusslave_include
   "${CMAKE_CURRENT_SOURCE_DIR}/src")
   
-target_compile_definitions(${arduinomodbusslave_target} PUBLIC ARDUINO_ARCH_AVR)
-
 list(APPEND arduinomodbusslave_source 
   "${CMAKE_CURRENT_SOURCE_DIR}/src/ModbusSlave.cpp")
 list(APPEND arduinomodbusslave_public_header
   "${CMAKE_CURRENT_SOURCE_DIR}/src/ModbusSlave.h")
 
 add_library(${arduinomodbusslave_target} ${arduinomodbusslave_source})
+
+target_compile_definitions(${arduinomodbusslave_target} PUBLIC ARDUINO_ARCH_AVR)
 
 target_include_directories(${arduinomodbusslave_target} PUBLIC
   ${arduinomodbusslave_include})
